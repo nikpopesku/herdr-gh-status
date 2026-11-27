@@ -122,7 +122,7 @@ export default class GhStatus extends View {
     return p.review === "APPROVED" ? "approved" : p.review === "CHANGES_REQUESTED" ? "changes requested" : p.review === "REVIEW_REQUIRED" ? "review required" : "no review";
   }
 
-  header(t, cx) {
+  header(t) {
     const status = this.error ? `${this.error}${this.retry ? ` · retry ${ago(this.retry * 1000)}` : ""}`
       : this.okAt ? `updated ${ago(Date.now() - this.okAt)} ago` : "loading…";
     return h_flex().h(36).px(12).gap(8).items_center().flex_none().border_b(1).border_color(t.border)
@@ -190,7 +190,7 @@ export default class GhStatus extends View {
     const actions = open("actions") ? (this.runs ? (this.runs.length ? this.runs.map((r) => this.runItem(t, r)) : [div().px(12).py(4).text_size(12).text_color(t.dim).child("No runs.")])
       : [div().px(12).py(4).text_size(12).text_color(t.dim).child(this.runsError ?? "Loading…")]) : [];
     return v_flex().id("gh-root").size_full().bg(t.surface).text_color(t.foreground)
-      .child(this.header(t, cx))
+      .child(this.header(t))
       .child(v_flex().id("gh-scroll").flex_1().overflow_y_scrollbar().pb(8)
         .child(this.section(t, "prs", "Pull requests", d ? d.prs.length : 0))
         .children(!open("prs") ? [] : d && !prs.length ? [div().px(12).py(4).text_size(12).text_color(t.dim).child("No open pull requests.")] : prs)

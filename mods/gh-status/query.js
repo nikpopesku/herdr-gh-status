@@ -62,7 +62,7 @@ export function parseRollup(rollup) {
 
 /** Turns the GraphQL `data` into what the view draws. */
 export function parse(data) {
-  const prs = (data.prs?.nodes ?? []).filter((p) => p && p.number).map((p) => ({
+  const prs = (data.prs?.nodes ?? []).filter((p) => p?.number).map((p) => ({
     repo: p.repository.nameWithOwner, number: p.number, title: p.title, url: p.url, draft: p.isDraft,
     review: p.reviewDecision, conflict: p.mergeable === "CONFLICTING", updatedAt: p.updatedAt,
     ...parseRollup(p.commits?.nodes?.[0]?.commit?.statusCheckRollup),
