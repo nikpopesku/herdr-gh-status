@@ -1,0 +1,6 @@
+{
+  "place": "none",
+  "palette": [
+    { "title": "GitHub status", "command": "mod.open", "args": { "name": "gh-status" }, "words": "pr pull request actions ci checks" }
+  ]
+}
