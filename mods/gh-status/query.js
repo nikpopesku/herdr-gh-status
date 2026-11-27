@@ -75,3 +75,12 @@ export function parse(data) {
 
 /** True when gh's error looks like a rate limit (primary or secondary). */
 export const isRateLimit = (text) => /rate limit|secondary|abuse|HTTP 403|HTTP 429/i.test(text ?? "");
+
+/** Actions REST `workflow_runs` → rows for the view. */
+export function parseRuns(repo, json) {
+  return (json.workflow_runs ?? []).map((r) => ({
+    repo, id: r.id, name: r.name ?? r.display_title ?? `run ${r.id}`, title: r.display_title ?? "", branch: r.head_branch ?? "", event: r.event ?? "",
+    url: r.html_url, at: Date.parse(r.run_started_at ?? r.created_at) || 0,
+    state: jobState((r.status ?? "").toUpperCase(), (r.conclusion ?? "").toUpperCase()), done: null, total: null,
+  }));
+}
