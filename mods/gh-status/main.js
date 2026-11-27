@@ -3,16 +3,16 @@ import { v_flex, h_flex } from "gpui-base";
 import { exec, theme, window, checking } from "herdr";
 import { buildQuery, parse, isRateLimit } from "./query.js";
 
-const MIN = 60, MAX = 900, RATE_MIN = 180; // seconds
+const MIN = 15, DEFAULT = 30, MAX = 900, RATE_MIN = 180; // seconds
 const short = (repo) => repo.split("/")[1];
 const ago = (ms) => { const s = Math.max(0, Math.round(ms / 1000)); return s < 60 ? `${s}s` : s < 3600 ? `${Math.round(s / 60)}m` : `${Math.round(s / 3600)}h`; };
 
 export default class GhStatus extends View {
   init(props, cx) {
-    this.poll = Math.max(MIN, Number(props?.poll_seconds) || MIN);
+    this.poll = Math.max(MIN, Number(props?.poll_seconds) || DEFAULT);
     this.extra = Array.isArray(props?.repos) ? props.repos : [];
     this.delay = this.poll; this.nextAt = 0; this.data = null; this.error = null; this.okAt = 0;
-    this.open = new Set(); this.busy = false; this.lastManual = 0; this.ticks = 0;
+    this.open = new Set(); this.busy = false; this.lastManual = 0; this.ticks = 0; this.sig = "";
     if (checking()) return; // `herdr-app check` must not call GitHub
     cx.timer.every(5000, (cx) => this.tick(cx));
     this.tick(cx);
@@ -25,9 +25,10 @@ export default class GhStatus extends View {
     else if (this.ticks % 3 === 0) cx.notify(); // keep "updated Ns ago" fresh, cheaply
   }
 
-  refresh(cx) {
+  refresh(cx, manual = false) {
     if (this.busy) return;
-    this.busy = true; cx.notify();
+    this.busy = true; if (manual) cx.notify(); // routine polls redraw only if something changed
+    const hadError = this.error;
     cx.spawn(async (cx) => {
       let wait = this.poll;
       try {
@@ -36,7 +37,9 @@ export default class GhStatus extends View {
         if (r.code !== 0) throw Object.assign(new Error((r.stderr || r.stdout).trim()), { limited: isRateLimit(r.stderr + r.stdout) });
         const json = JSON.parse(r.stdout);
         if (json.errors?.length && !json.data) throw Object.assign(new Error(json.errors[0].message), { limited: isRateLimit(json.errors[0].message) });
-        this.data = parse(json.data); this.okAt = Date.now(); this.error = null; this.delay = this.poll; wait = this.poll;
+        const next = parse(json.data), sig = JSON.stringify([next.prs, next.branches]);
+        if (sig !== this.sig) { this.sig = sig; this.changed = true; }
+        this.data = next; this.okAt = Date.now(); this.error = null; this.delay = this.poll; wait = this.poll;
         if (this.data.rate?.remaining === 0) wait = Math.max(wait, (Date.parse(this.data.rate.resetAt) - Date.now()) / 1000);
       } catch (e) {
         const msg = String(e.message || e);
@@ -47,7 +50,9 @@ export default class GhStatus extends View {
         wait = e.limited ? Math.max(RATE_MIN, this.delay) : this.delay;
       }
       this.nextAt = Date.now() + wait * 1000; this.retry = wait;
-      this.busy = false; cx.notify();
+      this.busy = false;
+      if (this.changed || manual || hadError !== this.error) cx.notify();
+      this.changed = false;
     });
   }
 
@@ -79,7 +84,7 @@ export default class GhStatus extends View {
       .child(div().flex_1().truncate().text_size(11).text_color(this.error ? t.ansi1 : t.dim).child(status))
       .child(this.busy ? svg("mods/gh-status/spinner.svg").size(13).text_color(t.dim).spin(900)
         : div().id("gh-refresh").px(6).text_color(t.muted).hover((s) => s.bg(t.hover)).rounded(5)
-          .on_click((_e, cx) => { if (Date.now() - this.lastManual > 15000) { this.lastManual = Date.now(); this.refresh(cx); } }).child("⟳"));
+          .on_click((_e, cx) => { if (Date.now() - this.lastManual > 15000) { this.lastManual = Date.now(); this.refresh(cx, true); } }).child("⟳"));
   }
 
   section(t, title, count) {
