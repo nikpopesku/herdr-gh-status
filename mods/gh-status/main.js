@@ -1,6 +1,6 @@
 import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { exec, theme, window, checking } from "herdr";
+import { exec, theme, window, checking, props as getProps } from "herdr";
 import { buildQuery, parse, parseRuns, isRateLimit } from "./query.js";
 
 const MIN = 5, BUSY = 10, IDLE = 30, MAX = 900, RATE_MIN = 180; // seconds
@@ -9,7 +9,8 @@ const short = (repo) => repo.split("/")[1];
 const ago = (ms) => { const s = Math.max(0, Math.round(ms / 1000)); return s < 60 ? `${s}s` : s < 3600 ? `${Math.round(s / 60)}m` : `${Math.round(s / 3600)}h`; };
 
 export default class GhStatus extends View {
-  init(props, cx) {
+  init(_props, cx) {
+    const props = getProps() ?? {}; // props come from the layout block via props(), not the init argument
     this.fixed = Number(props?.poll_seconds) > 0 ? Math.max(MIN, Number(props.poll_seconds)) : 0; // 0 = adaptive
     this.extra = Array.isArray(props?.repos) ? props.repos : [];
     this.delay = this.fixed || IDLE; this.nextAt = 0;
@@ -24,7 +25,7 @@ export default class GhStatus extends View {
   tick(cx) {
     this.ticks++;
     const due = !this.busy && Date.now() >= this.nextAt && window()?.visible !== false;
-    const runsDue = due && !this.hidden.has("actions") && !this.runsBusy && Date.now() >= this.runsNext && this.data;
+    const runsDue = window()?.visible !== false && !this.hidden.has("actions") && !this.runsBusy && Date.now() >= this.runsNext && this.data;
     if (runsDue) this.refreshRuns(cx);
     if (due) this.refresh(cx);
     else if (this.ticks % 3 === 0) cx.notify(); // keep "updated Ns ago" fresh, cheaply
