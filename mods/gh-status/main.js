@@ -47,6 +47,8 @@ export default class GhStatus extends View {
         this.data = next; this.okAt = Date.now(); this.error = null;
         const busy = [...next.prs, ...next.branches].some((i) => i.runs.some((r) => r.state === "running"));
         this.delay = this.fixed || (busy ? BUSY : IDLE); wait = this.delay;
+        if (busy && !this.wasBusy) this.runsNext = 0; // a check just started: look at Actions now, not in 5 minutes
+        this.wasBusy = busy;
         if (this.data.rate?.remaining === 0) wait = Math.max(wait, (Date.parse(this.data.rate.resetAt) - Date.now()) / 1000);
       } catch (e) {
         const msg = String(e.message || e);
