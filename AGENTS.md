@@ -4,8 +4,6 @@ Herdr app mod `gh-status`: a panel of open GitHub PRs and Actions runs. Source i
 
 ## Working a Jira ticket (TECH project, e.g. TECH-2)
 
-Jira: https://885nik.atlassian.net/browse/TECH-2
-
 1. **Start:** move the ticket to **In Progress** before writing code.
 2. **Branch and commits:** branch `TECH-<n>-short-description`, commit messages `TECH-<n>: Description`.
 3. **Open a PR** to `main` when the work is ready. Put the ticket key in the title (`TECH-<n>: …`).
