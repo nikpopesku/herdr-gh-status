@@ -1,0 +1,38 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntax check
+        run: for f in mods/gh-status/*.js; do node --check "$f" || exit 1; done
+      - name: Unit tests
+        run: node --test tests/*.test.mjs
+      - name: No tokens in the mod
+        run: |
+          if grep -rEn "gh[pousr]_[A-Za-z0-9]{20,}|github_pat_|GH_TOKEN|GITHUB_TOKEN" mods; then
+            echo "token-like string found in mods/"; exit 1
+          fi
