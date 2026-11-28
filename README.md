@@ -9,4 +9,4 @@ A [Herdr](https://herdr.dev) desktop-app mod: one panel with all your open GitHu
 
 Install: `./install.sh`, then add `{ "type": "block", "content": { "mod": "gh-status", "props": { "repos": ["owner/name"] } } }` to a cloned layout.
 
-Status: work in progress (TECH-2).
+Status: work in progress.
